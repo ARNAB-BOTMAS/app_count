@@ -23,6 +23,10 @@ function App() {
   const [message, setMessage] = useState('');
   const [showAll, setShowAll] = useState(false);
 
+  // useEffect(() => {
+  //   setTimeout(() => setLoading(false), 2000);
+  // }, []);
+
   useEffect(() => {
     axios
       .get(`${API_URL}`, {
@@ -31,34 +35,6 @@ function App() {
       .then((res) => {
         setData(res.data);
         setLoading(false);
-      }).catch((err) => {
-        setError('Error fetching data');
-        console.error(err);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Failed to load all entries.',
-        });
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (loading) return;
-
-    // Swal.fire({
-    //   title: 'Loading all entries...',
-    //   allowOutsideClick: false,
-    //   didOpen: () => Swal.showLoading(),
-    // });
-
-    axios
-      .get(`${API_URL}/all/data`, {
-        headers: { 'x-api-key': API_KEY },
-      })
-      .then((res) => {
-        setData(res.data);
-        Swal.close();
       })
       .catch((err) => {
         setError('Error fetching data');
@@ -68,6 +44,7 @@ function App() {
           title: 'Error',
           text: 'Failed to load all entries.',
         });
+        setLoading(false);
       });
   }, [loading]);
 
@@ -221,6 +198,7 @@ function App() {
           loop={true}
           style={{ height: '300px', width: '300px' }}
         />
+        <h2>Welcome</h2>
       </div>
     );
   }
