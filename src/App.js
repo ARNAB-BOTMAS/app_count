@@ -3,17 +3,17 @@ import axios from 'axios';
 import Calendar from 'react-calendar';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
-import Lottie from 'lottie-react'; // Import lottie-react
+import Lottie from 'lottie-react';
 import 'react-calendar/dist/Calendar.css';
 import './App.css';
 
-import splashAnimation from './animation/loading.json'; // ✅ Your Lottie JSON file
+import splashAnimation from './animation/loading.json';
 
 const API_URL = process.env.REACT_APP_API_URL;
 const API_KEY = process.env.REACT_APP_API_KEY;
 
 function App() {
-  const [loading, setLoading] = useState(true); // Splash loading state
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [tfCount, setTfCount] = useState('');
@@ -23,21 +23,34 @@ function App() {
   const [message, setMessage] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // Show splash screen for 2 seconds on first load
   useEffect(() => {
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
+    axios
+      .get(`${API_URL}`, {
+        headers: { 'x-api-key': API_KEY },
+      })
+      .then((res) => {
+        setData(res.data);
+        setLoading(false);
+      }).catch((err) => {
+        setError('Error fetching data');
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load all entries.',
+        });
+        setLoading(false);
+      });
   }, []);
 
-  // Fetch all entries
   useEffect(() => {
     if (loading) return;
-    Swal.fire({
-      title: 'Loading all entries...',
-      allowOutsideClick: false,
-      didOpen: () => Swal.showLoading(),
-    });
+
+    // Swal.fire({
+    //   title: 'Loading all entries...',
+    //   allowOutsideClick: false,
+    //   didOpen: () => Swal.showLoading(),
+    // });
 
     axios
       .get(`${API_URL}/all/data`, {
@@ -58,7 +71,6 @@ function App() {
       });
   }, [loading]);
 
-  // Fetch data for selected date
   useEffect(() => {
     if (loading) return;
 
@@ -161,11 +173,54 @@ function App() {
       });
   };
 
-  // Splash screen
+  const handleDelete = () => {
+    const formattedDate = format(selectedDate, 'dd/MM/yyyy');
+
+    Swal.fire({
+      title: 'Are you sure?',
+      text: `This will delete the entry for ${formattedDate}.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, delete it!',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        Swal.fire({
+          title: 'Deleting...',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading(),
+        });
+
+        axios
+          .delete(`${API_URL}/delete?date=${formattedDate}`, {
+            headers: { 'x-api-key': API_KEY },
+          })
+          .then(() => {
+            setData((prev) =>
+              prev.filter((item) => item.date !== formattedDate)
+            );
+            setSelectedData(null);
+            setTfCount('');
+            setDaCount('');
+            setMessage('Entry deleted successfully');
+
+            Swal.fire('Deleted!', 'The entry has been deleted.', 'success');
+          })
+          .catch((err) => {
+            console.error(err);
+            Swal.fire('Error', 'Failed to delete the entry.', 'error');
+          });
+      }
+    });
+  };
+
   if (loading) {
     return (
       <div className="splash-screen">
-        <Lottie animationData={splashAnimation} loop={true} style={{ height: '300px', width: '300px' }} />
+        <Lottie
+          animationData={splashAnimation}
+          loop={true}
+          style={{ height: '300px', width: '300px' }}
+        />
       </div>
     );
   }
@@ -178,7 +233,9 @@ function App() {
 
       <h2>Entry for {format(selectedDate, 'dd/MM/yyyy')}</h2>
       {selectedData ? (
-        <p>TF: {selectedData.tf_count}, DA: {selectedData.da_count}</p>
+        <p>
+          TF: {selectedData.tf_count}, DA: {selectedData.da_count}
+        </p>
       ) : (
         <p>No data for this date yet.</p>
       )}
@@ -200,20 +257,34 @@ function App() {
         />
         <div id="Button">
           <button type="submit">
-            {selectedData ? 'Update Entry' : 'Add Data'}
+            {selectedData ? 'Update' : 'Add Data'}
           </button>
           {selectedData && (
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedData(null);
-                setTfCount('');
-                setDaCount('');
-                setMessage('');
-              }}
-            >
-              Cancel Edit
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedData(null);
+                  setTfCount('');
+                  setDaCount('');
+                  setMessage('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="delete-button"
+                style={{
+                  backgroundColor: 'crimson',
+                  color: 'white',
+                  marginLeft: '10px',
+                }}
+              >
+                Delete
+              </button>
+            </>
           )}
         </div>
       </form>
