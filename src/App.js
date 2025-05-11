@@ -23,17 +23,12 @@ function App() {
   const [message, setMessage] = useState('');
   const [showAll, setShowAll] = useState(false);
 
-  // useEffect(() => {
-  //   setTimeout(() => setLoading(false), 2000);
-  // }, []);
-
-  useEffect(() => {
+useEffect(() => {
     axios
       .get(`${API_URL}`, {
         headers: { 'x-api-key': API_KEY },
       })
       .then((res) => {
-        setData(res.data);
         setLoading(false);
       })
       .catch((err) => {
@@ -45,6 +40,34 @@ function App() {
           text: 'Failed to load all entries.',
         });
         setLoading(false);
+      });
+  }, [loading]);
+
+  useEffect(() => {
+    if (loading) return;
+
+    Swal.fire({
+      title: 'Loading all entries...',
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
+    });
+
+    axios
+      .get(`${API_URL}/all/data`, {
+        headers: { 'x-api-key': API_KEY },
+      })
+      .then((res) => {
+        setData(res.data);
+        Swal.close();
+      })
+      .catch((err) => {
+        setError('Error fetching data');
+        console.error(err);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Failed to load all entries.',
+        });
       });
   }, [loading]);
 
@@ -198,7 +221,6 @@ function App() {
           loop={true}
           style={{ height: '300px', width: '300px' }}
         />
-        <h2>Welcome</h2>
       </div>
     );
   }
@@ -275,15 +297,28 @@ function App() {
       </button>
 
       {showAll && (
-        <div>
-          <h2>All Entries</h2>
-          <ul>
-            {data.map((item, idx) => (
-              <li key={idx}>
-                {item.date}: TF = {item.tf_count}, DA = {item.da_count}
-              </li>
-            ))}
-          </ul>
+        <div id='tabledate'>
+          <div>
+            <h2 style={{ textAlign: 'center' }}>All Entries</h2>
+            <table border="1" cellPadding= "5" style={{ margin: '0 auto', borderCollapse: 'collapse', background: "#fff"}}>
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>TF Count</th>
+                  <th>DA Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((item, idx) => (
+                  <tr key={idx}>
+                    <td>{item.date}</td>
+                    <td>{item.tf_count}</td>
+                    <td>{item.da_count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

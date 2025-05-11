@@ -84,3 +84,9 @@ ul {
   border-radius: 4px;
   cursor: pointer;
 }
+
+#tabledate {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
